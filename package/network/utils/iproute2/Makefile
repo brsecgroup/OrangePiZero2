@@ -49,7 +49,7 @@ $(call Package/iproute2/Default)
  VARIANT:=full
  PROVIDES:=ip
  ALTERNATIVES:=300:/sbin/ip:/usr/libexec/ip-full
- DEPENDS:=+libnl-tiny +libelf +libcap +(PACKAGE_devlink||PACKAGE_rdma):libml
+ DEPENDS:=+libnl-tiny +libelf +libpcap +(PACKAGE_devlink||PACKAGE_rdma):libml
 endef
 
 define Package/tc
