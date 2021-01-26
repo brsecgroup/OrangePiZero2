@@ -8,16 +8,18 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=iproute2
-PKG_VERSION:=5.7.0
-PKG_RELEASE:=2
+PKG_VERSION:=5.0.0
+PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.xz
 PKG_SOURCE_URL:=@KERNEL/linux/utils/net/iproute2
-PKG_HASH:=725dc7ba94aae54c6f8d4223ca055d9fb4fe89d6994b1c03bfb4411c4dd10f21
+PKG_HASH:=df047302a39650ef832c07e8dab5df7a23218cd398bd310c8628e386161d20ba
 PKG_BUILD_PARALLEL:=1
 PKG_BUILD_DEPENDS:=iptables
 PKG_LICENSE:=GPL-2.0
 PKG_CPE_ID:=cpe:/a:iproute2_project:iproute2
+
+PKG_BUILD_DIR:=$(BUILD_DIR)/$(PKG_NAME)-$(BUILD_VARIANT)/$(PKG_NAME)-$(PKG_VERSION)
 
 include $(INCLUDE_DIR)/kernel.mk
 include $(INCLUDE_DIR)/package.mk
@@ -38,7 +40,7 @@ $(call Package/iproute2/Default)
  DEFAULT_VARIANT:=1
  PROVIDES:=ip
  ALTERNATIVES:=200:/sbin/ip:/usr/libexec/ip-tiny
- DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+ DEPENDS:=+libnl-tiny +libelf +libcap + libpcap +(PACKAGE_devlink||PACKAGE_rdma):libml
 endef
 
 define Package/ip-full
@@ -47,7 +49,7 @@ $(call Package/iproute2/Default)
  VARIANT:=full
  PROVIDES:=ip
  ALTERNATIVES:=300:/sbin/ip:/usr/libexec/ip-full
- DEPENDS:=+libnl-tiny +libelf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+ DEPENDS:=+libnl-tiny + libcap + libpcap +libelf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
 endef
 
 define Package/tc
@@ -55,43 +57,43 @@ $(call Package/iproute2/Default)
   TITLE:=Traffic control utility
   VARIANT:=tc
   PROVIDES:=tc
-  DEPENDS:=+kmod-sched-core +libxtables +libelf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+  DEPENDS:=+kmod-sched-core +libxtables + libcap + libpcap +libelf +(PACKAGE_devlink||PACKAGE_rdma):libmnl
 endef
 
 define Package/genl
 $(call Package/iproute2/Default)
   TITLE:=General netlink utility frontend
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
+  DEPENDS:=+libnl-tiny + libcap + libpcap +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
 endef
 
 define Package/ip-bridge
 $(call Package/iproute2/Default)
   TITLE:=Bridge configuration utility from iproute2
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
+  DEPENDS:=+libnl-tiny + libcap + libpcap +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
 endef
 
 define Package/ss
 $(call Package/iproute2/Default)
   TITLE:=Socket statistics utility
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf +kmod-netlink-diag
+  DEPENDS:=+libnl-tiny + libcap + libpcap +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
 endef
 
 define Package/nstat
 $(call Package/iproute2/Default)
   TITLE:=Network statistics utility
-  DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
+  DEPENDS:=+libnl-tiny + libcap + libpcap +(PACKAGE_devlink||PACKAGE_rdma):libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
 endef
 
 define Package/devlink
 $(call Package/iproute2/Default)
   TITLE:=Network devlink utility
-  DEPENDS:=+libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
+  DEPENDS:=+libmnl + libcap + libpcap +(PACKAGE_tc||PACKAGE_ip-full):libelf
 endef
 
 define Package/rdma
 $(call Package/iproute2/Default)
   TITLE:=Network rdma utility
-  DEPENDS:=+libmnl +(PACKAGE_tc||PACKAGE_ip-full):libelf
+  DEPENDS:=+libmnl + libcap + libpcap +(PACKAGE_tc||PACKAGE_ip-full):libelf
 endef
 
 ifeq ($(BUILD_VARIANT),tiny)
@@ -100,7 +102,6 @@ endif
 
 ifeq ($(BUILD_VARIANT),full)
   HAVE_ELF:=y
-  HAVE_CAP:=n
 endif
 
 ifeq ($(BUILD_VARIANT),tc)
@@ -121,7 +122,7 @@ define Build/Configure
 		> $(PKG_BUILD_DIR)/include/SNAPSHOT.h
 endef
 
-TARGET_CFLAGS += -ffunction-sections -fdata-sections -flto
+TARGET_CFLAGS += -ffunction-sections -fdata-sections
 TARGET_LDFLAGS += -Wl,--gc-sections
 TARGET_CPPFLAGS += -I$(STAGING_DIR)/usr/include/libnl-tiny
 
@@ -131,7 +132,6 @@ MAKE_FLAGS += \
 	IP_CONFIG_TINY=$(IP_CONFIG_TINY) \
 	HAVE_ELF=$(HAVE_ELF) \
 	HAVE_MNL=$(HAVE_MNL) \
-	HAVE_CAP=$(HAVE_CAP) \
 	IPT_LIB_DIR=/usr/lib/iptables \
 	XT_LIB_DIR=/usr/lib/iptables \
 	FPIC="$(FPIC)"
