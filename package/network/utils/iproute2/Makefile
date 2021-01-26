@@ -40,7 +40,7 @@ $(call Package/iproute2/Default)
  DEFAULT_VARIANT:=1
  PROVIDES:=ip
  ALTERNATIVES:=200:/sbin/ip:/usr/libexec/ip-tiny
- DEPENDS:=+libnl-tiny +(PACKAGE_devlink||PACKAGE_rdma):libmnl
+ DEPENDS:=+libnl-tiny +libelf + libpcap + libcap +(PACKAGE_devlink||PACKAGE_rdma):libml
 endef
 
 define Package/ip-full
